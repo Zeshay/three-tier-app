@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  database:
+    image: mongo
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: always
+    networks:
+      - app-network
+    healthcheck:
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    user: "1000:1000"
+    read_only: true
+
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - database
+    env_file:
+      - ./backend/.env
+    restart: always
+    networks:
+      - app-network
+    healthcheck:
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    user: "1000:1000"
+    read_only: true
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - app-network
+    healthcheck:
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    user: "1000:1000"
+    read_only: true
+
+volumes:
+  mongo-data:
+
+networks:
+  app-network:
+    driver: bridge
+
