@@ -19,7 +19,7 @@ services:
     read_only: true
 
   backend:
-    image: 478867930505.dkr.ecr.us-east-1.amazonaws.com/three-tier-app-backend:latest
+    image: 779937513455.dkr.ecr.us-east-1.amazonaws.com/three-tier-app-backend:latest
     container_name: backend
     ports:
       - "5000:5000"
@@ -38,7 +38,7 @@ services:
     read_only: true
 
   frontend:
-    build: 478867930505.dkr.ecr.us-east-1.amazonaws.com/three-tier-app-frontend:latest
+    build: 779937513455.dkr.ecr.us-east-1.amazonaws.com/three-tier-app-frontend:latest
     container_name: frontend
     ports:
       - "3000:3000"
