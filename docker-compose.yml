@@ -3,7 +3,7 @@ version: "3.8"
 services:
   database:
     image: mongo
-    container_name: mongo-2
+    container_name: mongo-${ENV}
     ports:
       - "27017:27017"
     volumes:
@@ -16,11 +16,10 @@ services:
       timeout: 10s
       retries: 3
     user: "1000:1000"
-    read_only: true
 
   backend:
     image: ${BACKEND_IMAGE}
-    container_name: backend
+    container_name: backend-${ENV}
     ports:
       - "5003:5000"
     depends_on:
@@ -35,11 +34,10 @@ services:
       timeout: 10s
       retries: 3
     user: "1000:1000"
-    read_only: true
 
   frontend:
     image: ${FRONTEND_IMAGE}
-    container_name: frontend
+    container_name: frontend-${ENV}
     ports:
       - "3003:3000"
     depends_on:
@@ -52,7 +50,6 @@ services:
       timeout: 10s
       retries: 3
     user: "1000:1000"
-    read_only: true
 
 volumes:
   mongo-data:
@@ -60,4 +57,3 @@ volumes:
 networks:
   app-network:
     driver: bridge
-
