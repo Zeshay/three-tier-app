@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub_credentials'
-        IMAGE_TAG   = "${env.BRANCH_NAME}-${BUILD_NUMBER}"
         DOCKERHUB_USER = 'zeesha345'
+        IMAGE_TAG = "${env.BRANCH_NAME}-${BUILD_NUMBER}"
     }
 
     stages {
@@ -58,6 +58,7 @@ pipeline {
                     writeFile file: '.env', text: """
 BACKEND_IMAGE=${BACKEND_TAG_DH}
 FRONTEND_IMAGE=${FRONTEND_TAG_DH}
+ENV=${env.BRANCH_NAME}
 """
                 }
             }
@@ -78,7 +79,7 @@ FRONTEND_IMAGE=${FRONTEND_TAG_DH}
         stage('Deploy Environment') {
             steps {
                 sh """
-                    docker-compose --env-file .env down || true
+                    docker-compose --env-file .env down --remove-orphans || true
                     docker-compose --env-file .env pull
                     docker-compose --env-file .env up -d --remove-orphans
                 """
@@ -96,7 +97,7 @@ FRONTEND_IMAGE=${FRONTEND_TAG_DH}
 
     post {
         success {
-            echo "✅ ${env.BRANCH_NAME} environment deployed successfully using Docker Hub images!"
+            echo "🚀 Successfully deployed ${env.BRANCH_NAME} environment using Docker Hub images!"
         }
         failure {
             echo "❌ Deployment failed for ${env.BRANCH_NAME}. Check logs."
