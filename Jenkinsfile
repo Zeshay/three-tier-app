@@ -5,14 +5,17 @@ pipeline {
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub_credentials'
         DOCKERHUB_USER = 'zeesha345'
         IMAGE_TAG = "${env.BRANCH_NAME}-${BUILD_NUMBER}"
+
+        // Assign dynamic ports only for dev
+        MONGO_PORT     = "${env.BRANCH_NAME == 'dev' ? "27${BUILD_NUMBER}" : "27017"}"
+        BACKEND_PORT   = "${env.BRANCH_NAME == 'dev' ? "50${BUILD_NUMBER}" : "5000"}"
+        FRONTEND_PORT  = "${env.BRANCH_NAME == 'dev' ? "30${BUILD_NUMBER}" : "3000"}"
     }
 
     stages {
 
         stage('Checkout Source') {
-            steps {
-                checkout scm
-            }
+            steps { checkout scm }
         }
 
         stage('Docker Hub Login') {
@@ -22,9 +25,7 @@ pipeline {
                     usernameVariable: 'DH_USER',
                     passwordVariable: 'DH_PASS'
                 )]) {
-                    sh '''
-                        echo $DH_PASS | docker login -u $DH_USER --password-stdin
-                    '''
+                    sh 'echo $DH_PASS | docker login -u $DH_USER --password-stdin'
                 }
             }
         }
@@ -59,6 +60,10 @@ pipeline {
 BACKEND_IMAGE=${BACKEND_TAG_DH}
 FRONTEND_IMAGE=${FRONTEND_TAG_DH}
 ENV=${env.BRANCH_NAME}
+
+MONGO_PORT=${MONGO_PORT}
+BACKEND_PORT=${BACKEND_PORT}
+FRONTEND_PORT=${FRONTEND_PORT}
 """
                 }
             }
@@ -66,20 +71,30 @@ ENV=${env.BRANCH_NAME}
 
         stage('Approval for Staging / Prod Deploy') {
             when {
-                anyOf {
-                    branch 'stg'
-                    branch 'prod'
-                }
+                anyOf { branch 'stg'; branch 'prod' }
             }
             steps {
                 input message: "Deploy to ${env.BRANCH_NAME} environment?", ok: "Yes, Deploy"
             }
         }
 
+        stage('Clean Previous Containers (Port Conflicts Fix)') {
+            steps {
+                sh """
+                    # Remove containers using dev ports
+                    docker ps -aq --filter "publish=${MONGO_PORT}" | xargs -r docker rm -f
+                    docker ps -aq --filter "publish=${BACKEND_PORT}" | xargs -r docker rm -f
+                    docker ps -aq --filter "publish=${FRONTEND_PORT}" | xargs -r docker rm -f
+
+                    # Bring compose down
+                    docker-compose --env-file .env down --remove-orphans || true
+                """
+            }
+        }
+
         stage('Deploy Environment') {
             steps {
                 sh """
-                    docker-compose --env-file .env down --remove-orphans || true
                     docker-compose --env-file .env pull
                     docker-compose --env-file .env up -d --remove-orphans
                 """
@@ -88,9 +103,7 @@ ENV=${env.BRANCH_NAME}
 
         stage('Cleanup Local Images') {
             steps {
-                sh """
-                    docker rmi ${BACKEND_TAG_DH} ${FRONTEND_TAG_DH} || true
-                """
+                sh "docker rmi ${BACKEND_TAG_DH} ${FRONTEND_TAG_DH} || true"
             }
         }
     }
