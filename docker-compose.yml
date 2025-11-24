@@ -5,7 +5,7 @@ services:
     image: mongo
     container_name: mongo-${BRANCH_NAME}
     ports:
-      - "27017:27017"
+      - "${MONGO_PORT:-27018}:27017"   # unique port for each branch
     volumes:
       - mongo-data:/data/db
     restart: always
@@ -21,11 +21,14 @@ services:
     image: ${BACKEND_IMAGE}
     container_name: backend-${ENV}
     ports:
-      - "5003:5000"
+      - "${BACKEND_PORT:-5003}:5000"
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     env_file:
       - ./backend/.env
+    environment:
+      MONGO_URL: "mongodb://database:27017"   # internal connection only
     restart: always
     networks:
       - app-network
@@ -39,9 +42,10 @@ services:
     image: ${FRONTEND_IMAGE}
     container_name: frontend-${ENV}
     ports:
-      - "3003:3000"
+      - "${FRONTEND_PORT:-3003}:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: always
     networks:
       - app-network
@@ -57,3 +61,4 @@ volumes:
 networks:
   app-network:
     driver: bridge
+
