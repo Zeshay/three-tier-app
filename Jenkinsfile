@@ -23,7 +23,7 @@ pipeline {
                     passwordVariable: 'DH_PASS'
                 )]) {
                     sh '''
-                        echo $DH_PASS | docker login -u $DH_USER --password-stdin
+                        echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
                     '''
                 }
             }
@@ -58,8 +58,11 @@ pipeline {
                     writeFile file: '.env', text: """
 BACKEND_IMAGE=${BACKEND_TAG_DH}
 FRONTEND_IMAGE=${FRONTEND_TAG_DH}
+ENV=${BRANCH_NAME}
 """
                 }
+
+                sh "cat .env"
             }
         }
 
@@ -71,16 +74,18 @@ FRONTEND_IMAGE=${FRONTEND_TAG_DH}
                 }
             }
             steps {
-                input message: "Deploy to ${env.BRANCH_NAME} environment?", ok: "Yes, Deploy"
+                timeout(time: 10, unit: 'MINUTES') {
+                    input message: "Deploy to ${env.BRANCH_NAME} environment?", ok: "Deploy Now"
+                }
             }
         }
 
         stage('Deploy Environment') {
             steps {
                 sh """
-                    docker-compose --env-file .env down || true
-                    docker-compose --env-file .env pull
-                    docker-compose --env-file .env up -d --remove-orphans
+                    docker compose --env-file .env down || true
+                    docker compose --env-file .env pull
+                    docker compose --env-file .env up -d --remove-orphans
                 """
             }
         }
