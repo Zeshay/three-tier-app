@@ -6,6 +6,11 @@ pipeline {
         BRANCH_NAME = 'dev'
         IMAGE_TAG   = "dev-${BUILD_NUMBER}"
         DOCKERHUB_USER = 'zeesha345'
+
+        // MongoDB credentials (set these in Jenkins credentials or pipeline environment)
+        MONGO_URI  = 'mongodb+srv://kzeesha345_db_user:5DXeRRuuKj8TFvcu@cluster0.urnw1iw.mongodb.net/?appName=Cluster0'
+        MONGO_USER = 'kzeesha345_db_user'
+        MONGO_PASS = '5DXeRRuuKj8TFvcu'
     }
 
     options { 
@@ -29,6 +34,7 @@ pipeline {
                     passwordVariable: 'DOCKERHUB_PASS'
                 )]) {
                     sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                    script { env.DOCKERHUB_USER = "${DOCKERHUB_USER}" }
                 }
             }
         }
@@ -59,9 +65,12 @@ pipeline {
             steps {
                 writeFile(
                     file: '.env',
-                    text: """BACKEND_IMAGE=${BACKEND_TAG_DH}
+                    text: """
+BACKEND_IMAGE=${BACKEND_TAG_DH}
 FRONTEND_IMAGE=${FRONTEND_TAG_DH}
-ENV=dev
+MONGO_URI=${MONGO_URI}
+MONGO_USER=${MONGO_USER}
+MONGO_PASS=${MONGO_PASS}
 """
                 )
             }
@@ -70,14 +79,8 @@ ENV=dev
         stage('Deploy Dev') {
             steps {
                 sh '''
-                    # Cleanup old containers and volumes
-                    docker-compose -f docker-compose.yml --env-file .env down -v
-                    docker system prune -af
-
-                    # Pull new images
+                    docker-compose -f docker-compose.yml --env-file .env down --remove-orphans
                     docker-compose -f docker-compose.yml --env-file .env pull
-
-                    # Bring up services
                     docker-compose -f docker-compose.yml --env-file .env up -d --remove-orphans
                 '''
             }
@@ -91,7 +94,7 @@ ENV=dev
     }
 
     post {
-        success { echo "✅ Dev deployment succeeded: ${IMAGE_TAG}" }
+        success { echo "✅ Dev deployed successfully: ${IMAGE_TAG}" }
         failure { echo "❌ Dev deployment failed." }
     }
 }
