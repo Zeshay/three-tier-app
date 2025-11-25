@@ -1,24 +1,23 @@
 version: "3.8"
 
 services:
-
   backend:
     image: ${BACKEND_IMAGE}
     container_name: backend-${ENV}
     ports:
       - "${BACKEND_PORT:-5003}:5000"
     env_file:
-      - ./backend/.env
+      - .env
     environment:
-      MONGO_URI: "${MONGO_URI}"
+      MONGO_URI: "${MONGO_URI}"   # MongoDB Atlas connection
     restart: always
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health" || "exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     user: "1000:1000"
 
   frontend:
@@ -33,10 +32,10 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "curl", "-f", "http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     user: "1000:1000"
 
 networks:
