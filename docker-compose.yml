@@ -6,45 +6,25 @@ services:
     container_name: backend-${ENV}
     ports:
       - "${BACKEND_PORT:-5003}:5000"
+    depends_on:
+      database:
+        condition: service_healthy
     env_file:
       - ./backend/.env
     environment:
-      MONGO_URI: "${MONGO_URI}"   # Use your Atlas connection string
+      # Wrap URL in quotes
+      MONGO_URI: "mongodb+srv://kzeesha345_db_user:5DXeRRuuKj8TFvcu@cluster0.urnw1iw.mongodb.net/?appName=Cluster0"
     restart: always
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health" || exit 1]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    user: "1000:1000"
-
-  frontend:
-    image: ${FRONTEND_IMAGE}
-    container_name: frontend-${ENV}
-    ports:
-      - "${FRONTEND_PORT:-3003}:3000"
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: always
-    networks:
-      - app-network
-    environment:
-      REACT_APP_BACKEND_URL: "http://backend:${BACKEND_PORT:-5003}"  # internal connection
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000" || exit 1]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 40s
+      interval: 30s
+      timeout: 10s
+      retries: 3
     user: "1000:1000"
 
 volumes:
-  # No local MongoDB, using Atlas
-  # Add volumes if needed for backend/frontend caching
+  mongo-data:
 
 networks:
   app-network:
