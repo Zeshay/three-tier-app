@@ -1,27 +1,23 @@
 pipeline {
     agent { label 'ec2-dev' }
 
-    options { 
-        skipStagesAfterUnstable()
-    }
-
     environment {
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
         BRANCH_NAME = 'dev'
-        IMAGE_TAG   = "dev-${BUILD_NUMBER}"
+        IMAGE_TAG = "dev-${BUILD_NUMBER}"
         DOCKERHUB_USER = 'zeesha345'
-        MONGO_URI = 'mongodb+srv://kzeesha345_db_user:5DXeRRuuKj8TFvcu@cluster0.urnw1iw.mongodb.net/?appName=Cluster0'
     }
 
-    // ✅ Add ansiColor here
-    // Make sure AnsiColor plugin is installed
     options {
-        ansiColor('xterm')
+        skipStagesAfterUnstable()
     }
 
     stages {
-        stage('Checkout Source') { 
-            steps { checkout scm } 
+
+        stage('Checkout Source') {
+            steps {
+                checkout scm
+            }
         }
 
         stage('Docker Hub Login') {
@@ -32,6 +28,7 @@ pipeline {
                     passwordVariable: 'DOCKERHUB_PASS'
                 )]) {
                     sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                    script { env.DOCKERHUB_USER = "${DOCKERHUB_USER}" }
                 }
             }
         }
@@ -64,10 +61,6 @@ pipeline {
                     file: '.env',
                     text: """BACKEND_IMAGE=${BACKEND_TAG_DH}
 FRONTEND_IMAGE=${FRONTEND_TAG_DH}
-MONGO_URI=${MONGO_URI}
-BACKEND_PORT=5003
-FRONTEND_PORT=3003
-ENV=${BRANCH_NAME}
 """
                 )
             }
@@ -84,12 +77,14 @@ ENV=${BRANCH_NAME}
         }
 
         stage('Cleanup') {
-            steps { sh 'docker rmi ${BACKEND_TAG_DH} ${FRONTEND_TAG_DH} || true' }
+            steps {
+                sh 'docker rmi ${BACKEND_TAG_DH} ${FRONTEND_TAG_DH} || true'
+            }
         }
     }
 
     post {
-        success { echo "✅ Dev deployed successfully: ${IMAGE_TAG}" }
+        success { echo "✅ Dev deployed: ${IMAGE_TAG}" }
         failure { echo "❌ Dev deployment failed." }
     }
 }
