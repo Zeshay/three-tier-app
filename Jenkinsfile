@@ -76,3 +76,22 @@ ENV=${BRANCH_NAME}
         stage('Deploy Dev') {
             steps {
                 sh '''
+                    docker-compose -f docker-compose.yml --env-file .env down
+                    docker-compose -f docker-compose.yml --env-file .env pull
+                    docker-compose -f docker-compose.yml --env-file .env up -d --remove-orphans
+                '''
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                sh 'docker rmi ${BACKEND_TAG_DH} ${FRONTEND_TAG_DH} || true'
+            }
+        }
+    }
+
+    post {
+        success { echo "✅ Dev deployed successfully: ${IMAGE_TAG}" }
+        failure { echo "❌ Dev deployment failed." }
+    }
+}
