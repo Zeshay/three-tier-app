@@ -6,11 +6,14 @@ pipeline {
         BRANCH_NAME = 'dev'
         IMAGE_TAG   = "dev-${BUILD_NUMBER}"
         DOCKERHUB_USER = 'zeesha345'
+
+        // MongoDB Atlas connection
         MONGO_URI = 'mongodb+srv://kzeesha345_db_user:5DXeRRuuKj8TFvcu@cluster0.urnw1iw.mongodb.net/?appName=Cluster0'
     }
 
     options { 
         skipStagesAfterUnstable()
+        ansiColor('xterm')
     }
 
     stages {
@@ -62,6 +65,9 @@ pipeline {
                     text: """BACKEND_IMAGE=${BACKEND_TAG_DH}
 FRONTEND_IMAGE=${FRONTEND_TAG_DH}
 MONGO_URI=${MONGO_URI}
+BACKEND_PORT=5003
+FRONTEND_PORT=3003
+ENV=${BRANCH_NAME}
 """
                 )
             }
@@ -70,22 +76,3 @@ MONGO_URI=${MONGO_URI}
         stage('Deploy Dev') {
             steps {
                 sh '''
-                    docker-compose -f docker-compose.yml --env-file .env down
-                    docker-compose -f docker-compose.yml --env-file .env pull
-                    docker-compose -f docker-compose.yml --env-file .env up -d --remove-orphans
-                '''
-            }
-        }
-
-        stage('Cleanup') {
-            steps {
-                sh 'docker rmi ${BACKEND_TAG_DH} ${FRONTEND_TAG_DH} || true'
-            }
-        }
-    }
-
-    post {
-        success { echo "✅ Dev deployed successfully: ${IMAGE_TAG}" }
-        failure { echo "❌ Dev deployment failed." }
-    }
-}
