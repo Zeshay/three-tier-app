@@ -4,20 +4,20 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
         BRANCH_NAME = 'dev'
-        IMAGE_TAG = "dev-${BUILD_NUMBER}"
+        IMAGE_TAG   = "dev-${BUILD_NUMBER}"
         DOCKERHUB_USER = 'zeesha345'
     }
 
-    options {
+    options { 
         skipStagesAfterUnstable()
     }
 
     stages {
 
-        stage('Checkout Source') {
-            steps {
+        stage('Checkout Source') { 
+            steps { 
                 checkout scm
-            }
+            } 
         }
 
         stage('Docker Hub Login') {
@@ -61,6 +61,9 @@ pipeline {
                     file: '.env',
                     text: """BACKEND_IMAGE=${BACKEND_TAG_DH}
 FRONTEND_IMAGE=${FRONTEND_TAG_DH}
+ENV=dev
+BACKEND_PORT=5003
+FRONTEND_PORT=3003
 """
                 )
             }
