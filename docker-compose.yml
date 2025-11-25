@@ -6,13 +6,9 @@ services:
     container_name: backend-${ENV}
     ports:
       - "${BACKEND_PORT:-5003}:5000"
-    depends_on:
-      database:
-        condition: service_healthy
     env_file:
       - ./backend/.env
     environment:
-      # Wrap URL in quotes
       MONGO_URI: "mongodb+srv://kzeesha345_db_user:5DXeRRuuKj8TFvcu@cluster0.urnw1iw.mongodb.net/?appName=Cluster0"
     restart: always
     networks:
@@ -23,8 +19,25 @@ services:
       retries: 3
     user: "1000:1000"
 
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    container_name: frontend-${ENV}
+    ports:
+      - "${FRONTEND_PORT:-3003}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: always
+    networks:
+      - app-network
+    healthcheck:
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    user: "1000:1000"
+
 volumes:
-  mongo-data:
+  mongo-data: {}   # optional, can remove if not used
 
 networks:
   app-network:
