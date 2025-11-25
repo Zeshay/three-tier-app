@@ -6,6 +6,7 @@ pipeline {
         BRANCH_NAME = 'dev'
         IMAGE_TAG   = "dev-${BUILD_NUMBER}"
         DOCKERHUB_USER = 'zeesha345'
+        MONGO_URI = 'mongodb+srv://kzeesha345_db_user:5DXeRRuuKj8TFvcu@cluster0.urnw1iw.mongodb.net/?appName=Cluster0'
     }
 
     options { 
@@ -28,7 +29,6 @@ pipeline {
                     passwordVariable: 'DOCKERHUB_PASS'
                 )]) {
                     sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
-                    script { env.DOCKERHUB_USER = "${DOCKERHUB_USER}" }
                 }
             }
         }
@@ -61,9 +61,6 @@ pipeline {
                     file: '.env',
                     text: """BACKEND_IMAGE=${BACKEND_TAG_DH}
 FRONTEND_IMAGE=${FRONTEND_TAG_DH}
-ENV=dev
-BACKEND_PORT=5003
-FRONTEND_PORT=3003
 MONGO_URI=${MONGO_URI}
 """
                 )
@@ -73,9 +70,9 @@ MONGO_URI=${MONGO_URI}
         stage('Deploy Dev') {
             steps {
                 sh '''
-                    docker-compose --env-file .env down
-                    docker-compose --env-file .env pull
-                    docker-compose --env-file .env up -d --remove-orphans
+                    docker-compose -f docker-compose.yml --env-file .env down
+                    docker-compose -f docker-compose.yml --env-file .env pull
+                    docker-compose -f docker-compose.yml --env-file .env up -d --remove-orphans
                 '''
             }
         }
@@ -88,7 +85,7 @@ MONGO_URI=${MONGO_URI}
     }
 
     post {
-        success { echo "✅ Dev deployed: ${IMAGE_TAG}" }
+        success { echo "✅ Dev deployed successfully: ${IMAGE_TAG}" }
         failure { echo "❌ Dev deployment failed." }
     }
 }
