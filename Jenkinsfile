@@ -61,6 +61,10 @@ pipeline {
                     file: '.env',
                     text: """BACKEND_IMAGE=${BACKEND_TAG_DH}
 FRONTEND_IMAGE=${FRONTEND_TAG_DH}
+ENV=dev
+BACKEND_PORT=5003
+FRONTEND_PORT=3003
+MONGO_URI=${MONGO_URI}
 """
                 )
             }
@@ -69,9 +73,9 @@ FRONTEND_IMAGE=${FRONTEND_TAG_DH}
         stage('Deploy Dev') {
             steps {
                 sh '''
-                    docker-compose -f docker-compose.yml --env-file .env down
-                    docker-compose -f docker-compose.yml --env-file .env pull
-                    docker-compose -f docker-compose.yml --env-file .env up -d --remove-orphans
+                    docker-compose --env-file .env down
+                    docker-compose --env-file .env pull
+                    docker-compose --env-file .env up -d --remove-orphans
                 '''
             }
         }
@@ -84,9 +88,7 @@ FRONTEND_IMAGE=${FRONTEND_TAG_DH}
     }
 
     post {
-        success { echo "Dev deployed: ${IMAGE_TAG}" }
-        failure { echo "Dev deployment failed." }
+        success { echo "✅ Dev deployed: ${IMAGE_TAG}" }
+        failure { echo "❌ Dev deployment failed." }
     }
 }
-
-
