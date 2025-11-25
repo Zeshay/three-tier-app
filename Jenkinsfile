@@ -10,6 +10,7 @@ pipeline {
 
     options { 
         skipStagesAfterUnstable()
+        timestamps()
     }
 
     stages {
@@ -28,7 +29,6 @@ pipeline {
                     passwordVariable: 'DOCKERHUB_PASS'
                 )]) {
                     sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
-                    script { env.DOCKERHUB_USER = "${DOCKERHUB_USER}" }
                 }
             }
         }
@@ -62,8 +62,6 @@ pipeline {
                     text: """BACKEND_IMAGE=${BACKEND_TAG_DH}
 FRONTEND_IMAGE=${FRONTEND_TAG_DH}
 ENV=dev
-BACKEND_PORT=5003
-FRONTEND_PORT=3003
 """
                 )
             }
@@ -72,8 +70,14 @@ FRONTEND_PORT=3003
         stage('Deploy Dev') {
             steps {
                 sh '''
-                    docker-compose -f docker-compose.yml --env-file .env down
+                    # Cleanup old containers and volumes
+                    docker-compose -f docker-compose.yml --env-file .env down -v
+                    docker system prune -af
+
+                    # Pull new images
                     docker-compose -f docker-compose.yml --env-file .env pull
+
+                    # Bring up services
                     docker-compose -f docker-compose.yml --env-file .env up -d --remove-orphans
                 '''
             }
@@ -87,7 +91,7 @@ FRONTEND_PORT=3003
     }
 
     post {
-        success { echo "✅ Dev deployed: ${IMAGE_TAG}" }
+        success { echo "✅ Dev deployment succeeded: ${IMAGE_TAG}" }
         failure { echo "❌ Dev deployment failed." }
     }
 }
