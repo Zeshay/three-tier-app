@@ -3,26 +3,27 @@ version: "3.8"
 services:
   backend:
     image: ${BACKEND_IMAGE}
-    container_name: backend-${BRANCH_NAME}
+    container_name: backend-${ENV}
     ports:
       - "${BACKEND_PORT:-5003}:5000"
     env_file:
-      - ./.env
+      - ./backend/.env
     environment:
-      MONGO_URI: ${MONGO_URI}   # read from .env
+      MONGO_URI: "${MONGO_URI}"   # Use your Atlas connection string
     restart: always
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health" ]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health" || exit 1]
+      interval: 10s
+      timeout: 5s
       retries: 5
+      start_period: 30s
     user: "1000:1000"
 
   frontend:
     image: ${FRONTEND_IMAGE}
-    container_name: frontend-${BRANCH_NAME}
+    container_name: frontend-${ENV}
     ports:
       - "${FRONTEND_PORT:-3003}:3000"
     depends_on:
@@ -31,12 +32,19 @@ services:
     restart: always
     networks:
       - app-network
+    environment:
+      REACT_APP_BACKEND_URL: "http://backend:${BACKEND_PORT:-5003}"  # internal connection
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000" ]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:3000" || exit 1]
+      interval: 10s
+      timeout: 5s
       retries: 5
+      start_period: 40s
     user: "1000:1000"
+
+volumes:
+  # No local MongoDB, using Atlas
+  # Add volumes if needed for backend/frontend caching
 
 networks:
   app-network:
