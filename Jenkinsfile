@@ -1,3 +1,4 @@
+
 pipeline {
     agent { label 'ec2-dev' }
 
@@ -10,22 +11,21 @@ pipeline {
 
     options { 
         skipStagesAfterUnstable()
-        // ❌ ansiColor not allowed here
     }
 
     stages {
 
         stage('Checkout Source') { 
             steps { 
-                ansiColor('xterm') {
-                    checkout scm 
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                    checkout scm
                 }
             } 
         }
 
         stage('Docker Hub Login') {
             steps {
-                ansiColor('xterm') {
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
                     withCredentials([usernamePassword(
                         credentialsId: "${DOCKERHUB_CREDENTIALS_ID}",
                         usernameVariable: 'DOCKERHUB_USER',
@@ -40,7 +40,7 @@ pipeline {
 
         stage('Build & Tag Images') {
             steps {
-                ansiColor('xterm') {
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
                     script {
                         env.BACKEND_TAG_DH = "${DOCKERHUB_USER}/three-tier-app-backend:${IMAGE_TAG}"
                         env.FRONTEND_TAG_DH = "${DOCKERHUB_USER}/three-tier-app-frontend:${IMAGE_TAG}"
@@ -55,7 +55,7 @@ pipeline {
 
         stage('Push Images to Docker Hub') {
             steps {
-                ansiColor('xterm') {
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
                     sh '''
                         docker push ${BACKEND_TAG_DH}
                         docker push ${FRONTEND_TAG_DH}
@@ -66,7 +66,7 @@ pipeline {
 
         stage('Prepare .env') {
             steps {
-                ansiColor('xterm') {
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
                     writeFile(
                         file: '.env',
                         text: """BACKEND_IMAGE=${BACKEND_TAG_DH}
@@ -79,7 +79,7 @@ FRONTEND_IMAGE=${FRONTEND_TAG_DH}
 
         stage('Deploy Dev') {
             steps {
-                ansiColor('xterm') {
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
                     sh '''
                         docker-compose -f docker-compose.yml --env-file .env down
                         docker-compose -f docker-compose.yml --env-file .env pull
@@ -91,7 +91,7 @@ FRONTEND_IMAGE=${FRONTEND_TAG_DH}
 
         stage('Cleanup') {
             steps {
-                ansiColor('xterm') {
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
                     sh 'docker rmi ${BACKEND_TAG_DH} ${FRONTEND_TAG_DH} || true'
                 }
             }
