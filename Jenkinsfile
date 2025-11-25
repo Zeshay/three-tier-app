@@ -1,6 +1,10 @@
 pipeline {
     agent { label 'ec2-dev' }
 
+    options { 
+        skipStagesAfterUnstable()
+    }
+
     environment {
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
         BRANCH_NAME = 'dev'
@@ -9,16 +13,15 @@ pipeline {
         MONGO_URI = 'mongodb+srv://kzeesha345_db_user:5DXeRRuuKj8TFvcu@cluster0.urnw1iw.mongodb.net/?appName=Cluster0'
     }
 
-    options { 
-        skipStagesAfterUnstable()
+    // ✅ Add ansiColor here
+    // Make sure AnsiColor plugin is installed
+    options {
+        ansiColor('xterm')
     }
 
     stages {
-
         stage('Checkout Source') { 
-            steps { 
-                checkout scm
-            } 
+            steps { checkout scm } 
         }
 
         stage('Docker Hub Login') {
@@ -72,21 +75,16 @@ ENV=${BRANCH_NAME}
 
         stage('Deploy Dev') {
             steps {
-                // Wrap with ansiColor for colored logs
-                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                    sh '''
-                        docker-compose -f docker-compose.yml --env-file .env down
-                        docker-compose -f docker-compose.yml --env-file .env pull
-                        docker-compose -f docker-compose.yml --env-file .env up -d --remove-orphans
-                    '''
-                }
+                sh '''
+                    docker-compose -f docker-compose.yml --env-file .env down
+                    docker-compose -f docker-compose.yml --env-file .env pull
+                    docker-compose -f docker-compose.yml --env-file .env up -d --remove-orphans
+                '''
             }
         }
 
         stage('Cleanup') {
-            steps {
-                sh 'docker rmi ${BACKEND_TAG_DH} ${FRONTEND_TAG_DH} || true'
-            }
+            steps { sh 'docker rmi ${BACKEND_TAG_DH} ${FRONTEND_TAG_DH} || true' }
         }
     }
 
