@@ -1,43 +1,24 @@
 version: "3.8"
 
 services:
-  database:
-    image: mongo
-    container_name: mongo-${BRANCH_NAME}
-    ports:
-      - "${MONGO_PORT:-27018}:27017"
-    volumes:
-      - mongo-data:/data/db
-    restart: always
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    user: "1000:1000"
 
   backend:
     image: ${BACKEND_IMAGE}
     container_name: backend-${ENV}
     ports:
       - "${BACKEND_PORT:-5003}:5000"
-    depends_on:
-      database:
-        condition: service_healthy
     env_file:
       - ./backend/.env
     environment:
-      MONGO_URL: "mongodb://database:27017"
+      MONGO_URI: "${MONGO_URI}"
     restart: always
     networks:
       - app-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 5
     user: "1000:1000"
 
   frontend:
@@ -53,13 +34,10 @@ services:
       - app-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 5
     user: "1000:1000"
-
-volumes:
-  mongo-data:
 
 networks:
   app-network:
