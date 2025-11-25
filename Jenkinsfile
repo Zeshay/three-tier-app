@@ -6,14 +6,11 @@ pipeline {
         BRANCH_NAME = 'dev'
         IMAGE_TAG   = "dev-${BUILD_NUMBER}"
         DOCKERHUB_USER = 'zeesha345'
-
-        // MongoDB Atlas connection
         MONGO_URI = 'mongodb+srv://kzeesha345_db_user:5DXeRRuuKj8TFvcu@cluster0.urnw1iw.mongodb.net/?appName=Cluster0'
     }
 
     options { 
         skipStagesAfterUnstable()
-        ansiColor('xterm')
     }
 
     stages {
@@ -75,11 +72,14 @@ ENV=${BRANCH_NAME}
 
         stage('Deploy Dev') {
             steps {
-                sh '''
-                    docker-compose -f docker-compose.yml --env-file .env down
-                    docker-compose -f docker-compose.yml --env-file .env pull
-                    docker-compose -f docker-compose.yml --env-file .env up -d --remove-orphans
-                '''
+                // Wrap with ansiColor for colored logs
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                    sh '''
+                        docker-compose -f docker-compose.yml --env-file .env down
+                        docker-compose -f docker-compose.yml --env-file .env pull
+                        docker-compose -f docker-compose.yml --env-file .env up -d --remove-orphans
+                    '''
+                }
             }
         }
 
