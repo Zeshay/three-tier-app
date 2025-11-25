@@ -1,4 +1,3 @@
-
 pipeline {
     agent { label 'ec2-dev' }
 
@@ -17,90 +16,77 @@ pipeline {
 
         stage('Checkout Source') { 
             steps { 
-                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                    checkout scm
-                }
+                checkout scm
             } 
         }
 
         stage('Docker Hub Login') {
             steps {
-                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                    withCredentials([usernamePassword(
-                        credentialsId: "${DOCKERHUB_CREDENTIALS_ID}",
-                        usernameVariable: 'DOCKERHUB_USER',
-                        passwordVariable: 'DOCKERHUB_PASS'
-                    )]) {
-                        sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
-                        script { env.DOCKERHUB_USER = "${DOCKERHUB_USER}" }
-                    }
+                withCredentials([usernamePassword(
+                    credentialsId: "${DOCKERHUB_CREDENTIALS_ID}",
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_PASS'
+                )]) {
+                    sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                    script { env.DOCKERHUB_USER = "${DOCKERHUB_USER}" }
                 }
             }
         }
 
         stage('Build & Tag Images') {
             steps {
-                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                    script {
-                        env.BACKEND_TAG_DH = "${DOCKERHUB_USER}/three-tier-app-backend:${IMAGE_TAG}"
-                        env.FRONTEND_TAG_DH = "${DOCKERHUB_USER}/three-tier-app-frontend:${IMAGE_TAG}"
-                    }
-                    sh '''
-                        docker build -t ${BACKEND_TAG_DH} ./backend
-                        docker build -t ${FRONTEND_TAG_DH} ./frontend
-                    '''
+                script {
+                    env.BACKEND_TAG_DH = "${DOCKERHUB_USER}/three-tier-app-backend:${IMAGE_TAG}"
+                    env.FRONTEND_TAG_DH = "${DOCKERHUB_USER}/three-tier-app-frontend:${IMAGE_TAG}"
                 }
+                sh '''
+                    docker build -t ${BACKEND_TAG_DH} ./backend
+                    docker build -t ${FRONTEND_TAG_DH} ./frontend
+                '''
             }
         }
 
         stage('Push Images to Docker Hub') {
             steps {
-                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                    sh '''
-                        docker push ${BACKEND_TAG_DH}
-                        docker push ${FRONTEND_TAG_DH}
-                    '''
-                }
+                sh '''
+                    docker push ${BACKEND_TAG_DH}
+                    docker push ${FRONTEND_TAG_DH}
+                '''
             }
         }
 
         stage('Prepare .env') {
             steps {
-                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                    writeFile(
-                        file: '.env',
-                        text: """BACKEND_IMAGE=${BACKEND_TAG_DH}
+                writeFile(
+                    file: '.env',
+                    text: """BACKEND_IMAGE=${BACKEND_TAG_DH}
 FRONTEND_IMAGE=${FRONTEND_TAG_DH}
 """
-                    )
-                }
+                )
             }
         }
 
         stage('Deploy Dev') {
             steps {
-                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                    sh '''
-                        docker-compose -f docker-compose.yml --env-file .env down
-                        docker-compose -f docker-compose.yml --env-file .env pull
-                        docker-compose -f docker-compose.yml --env-file .env up -d --remove-orphans
-                    '''
-                }
+                sh '''
+                    docker-compose -f docker-compose.yml --env-file .env down
+                    docker-compose -f docker-compose.yml --env-file .env pull
+                    docker-compose -f docker-compose.yml --env-file .env up -d --remove-orphans
+                '''
             }
         }
 
         stage('Cleanup') {
             steps {
-                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                    sh 'docker rmi ${BACKEND_TAG_DH} ${FRONTEND_TAG_DH} || true'
-                }
+                sh 'docker rmi ${BACKEND_TAG_DH} ${FRONTEND_TAG_DH} || true'
             }
         }
     }
 
     post {
-        success { echo "✅ Dev deployed: ${IMAGE_TAG}" }
-        failure { echo "❌ Dev deployment failed." }
+        success { echo "Dev deployed: ${IMAGE_TAG}" }
+        failure { echo "Dev deployment failed." }
     }
 }
+
 
