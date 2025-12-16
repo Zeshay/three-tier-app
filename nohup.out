@@ -1,0 +1,22 @@
+error: unknown command "port-forwad" for "kubectl"
+
+Did you mean this?
+	port-forward
+Forwarding from 0.0.0.0:3000 -> 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Forwarding from 0.0.0.0:5000 -> 5000
+Handling connection for 5000
+Handling connection for 5000
+Handling connection for 5000
+Handling connection for 5000
+Handling connection for 5000
+error: TYPE/NAME and list of ports are required for port-forward
+See 'kubectl port-forward -h' for help and examples
+Forwarding from 0.0.0.0:3000 -> 3000
+Handling connection for 3000
+Handling connection for 3000
+Forwarding from 0.0.0.0:5000 -> 5000
+Handling connection for 5000
+Handling connection for 5000
