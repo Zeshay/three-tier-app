@@ -14,28 +14,33 @@ spec:
         app: frontend
     spec:
       containers:
-        - name: frontend
-          image: zeesha345/frontend:v1
-          ports:
-            - containerPort: 3000
-          resources:
-            requests:
-              cpu: "200m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 10
-            periodSeconds: 15
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 10
-
+      - name: frontend
+        image: zeesha345/frontend:v3
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        env:
+            - name: BACKEND_IP_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: REACT_APP_API_BASE_URL
 
